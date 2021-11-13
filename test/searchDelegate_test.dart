@@ -44,22 +44,12 @@ TestData generateRandomTestData() {
 void main() {
   group('A group of tests', () {
     var items = List<int>.generate(50, (index) => index);
-    var delegate =
-        ChainedSearchDelegate<int>(items, search: (int value, dynamic integer) {
-      var val = integer as int;
-      return value > val;
-    }, initialValue: 5);
+    var delegate = ChainedSearchDelegate<int>(items);
     final testData = List.generate(100000, (index) => generateRandomTestData());
-    var chainedTestDelegate = ChainedSearchDelegate<TestData>(testData,
-        search: (TestData data, dynamic value) {
-      var val = value as int;
-      return data.id > val;
-    }, initialValue: 100);
+    var chainedTestDelegate = ChainedSearchDelegate<TestData>(testData);
 
     final treeSearchDelegate = TreeSearchDelegate<TestData>(
       testData,
-      search: (item, param) => item.id > param,
-      initialValue: 150,
     );
     final node = treeSearchDelegate.createNodeTrees(
       [
@@ -126,8 +116,30 @@ void main() {
     });
 
     test('First Test', () {
-      //expect(delegate.shown, List.generate(length, (index) => null));
-      //expect(delegateLower.shown, [1, 2, 3, 4, 5]);
+      final items = List.generate(25000, (index) => generateRandomTestData());
+      TreeSearchDelegate<TestData> delegate = TreeSearchDelegate(items);
+      delegate.add<bool>((item, param) => item.isOpen, true, nodeLabel: 'root');
+      delegate.add<int>((item, param) => item.price < param, 1500,
+          nodeLabel: 'lesserThan1500', filterType: TREE_FILTER_TYPE.ONLY);
+      delegate.add<int>((item, param) => item.price > param, 150,
+          nodeLabel: 'PriceBigger150');
+      delegate.add<int>((item, param) => item.duration < param, 2,
+          parentNodeLabel: 'lesserThan1500', nodeLabel: 'durationLesserThan2');
+      var dbt = delegate.add<int>((item, param) => item.price % 10 == 0, 1500,
+          nodeLabel: 'dividableByTen', parentNodeLabel: 'lesserThan1500');
+      delegate.searchItems();
+      expect(delegate.shown.where((element) => element.price > 1500).length, 0);
+      expect(delegate.shown.where((element) => element.price < 150).length, 0);
+      expect(
+          delegate.shown
+              .where((element) =>
+                  element.price > 1500 &&
+                  element.price < 150 &&
+                  (element.duration > 2 && element.price % 10 != 0))
+              .length,
+          0);
+      expect(delegate.findNodeByLabel('dividableByTen'), dbt);
+      print(delegate.findNodeByLabel('lesserThan1500'));
     });
   });
 }

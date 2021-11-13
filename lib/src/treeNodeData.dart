@@ -5,9 +5,9 @@ class TreeNodeData<T, V> {
   final V initialValue;
   final String? label;
 
-  TreeNodeData(
+  TreeNodeData({
     this.label,
-    this.initialValue,
-    this.search,
-  );
+    required this.initialValue,
+    required this.search,
+  });
 }

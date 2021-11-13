@@ -7,14 +7,10 @@ import 'node.dart';
 /// [Delegate] based classes' initialValue can be changed.
 /// that will also effect the further comparisons and searches.
 class ChainedSearchDelegate<T> extends Delegate<T, dynamic> {
-  final Search<T, dynamic> search;
-  dynamic initialValue;
-  late _SearchNode<T, dynamic>? _startSearchNode;
-  ChainedSearchDelegate(List<T> items,
-      {required this.search, required this.initialValue})
-      : super(items, normalSearch: search) {
-    _startSearchNode = _SearchNode<T, dynamic>(search, initialValue);
-  }
+  _SearchNode<T, dynamic>? _startSearchNode;
+  ChainedSearchDelegate(
+    List<T> items,
+  ) : super(items);
 
   _SearchNode<T, P> chain<P>(Search<T, P> search, P initialValue,
       [String? label]) {

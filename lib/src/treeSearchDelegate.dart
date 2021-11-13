@@ -51,6 +51,11 @@ class _TreeSearchNode<T, V> extends Node<T, V> {
   }
 
   @override
+  String toString() {
+    return 'searchType:$T, label:$label, subNodeCount:${_nodes.length}';
+  }
+
+  @override
   _TreeSearchNode<T, dynamic>? findNodeByLabel(String label) {
     if (this.label != label) {
       for (var i in _nodes) {
@@ -76,26 +81,21 @@ enum TREE_FILTER_TYPE { ALL, ONLY, NONE }
 /// conditions individualy qualifies for the result this class handles them.
 /// it has a [_TreeSearchNode] as start node.
 class TreeSearchDelegate<T> extends Delegate<T, dynamic> {
-  final Search<T, dynamic> search;
-  final dynamic initialValue;
   TREE_FILTER_TYPE rootFilter;
-  late _TreeSearchNode<T, dynamic> root;
+  _TreeSearchNode<T, dynamic>? root;
   TreeSearchDelegate(
     List<T> items, {
-    required this.search,
-    required this.initialValue,
     this.rootFilter = TREE_FILTER_TYPE.ALL,
-  }) : super(items, normalSearch: search) {
-    root = _TreeSearchNode<T, dynamic>(
-      search,
-      initialValue,
-      rootFilter,
-    );
-  }
+  }) : super(
+          items,
+        );
+
+  _TreeSearchNode<T, dynamic>? findNodeByLabel(String label) =>
+      this.root?.findNodeByLabel(label);
 
   ///creates a node from [search] and [initialValue ] parameter,
   ///adds it under the root and returns the created node.
-  _TreeSearchNode add<P>(Search<T, P> search, P initialValue,
+  _TreeSearchNode<T, P> add<P>(Search<T, P> search, P initialValue,
       {String? nodeLabel,
       _TreeSearchNode<T, dynamic>? parentNode,
       TREE_FILTER_TYPE filterType = TREE_FILTER_TYPE.ALL,
@@ -105,17 +105,21 @@ class TreeSearchDelegate<T> extends Delegate<T, dynamic> {
 
     var newNode = _TreeSearchNode<T, P>(search, initialValue, filterType,
         label: nodeLabel);
+    if (root == null) {
+      root = newNode;
+      return newNode;
+    }
     if (parentNodeLabel != null) {
       _TreeSearchNode<T, dynamic>? parent =
-          root.findNodeByLabel(parentNodeLabel);
+          root!.findNodeByLabel(parentNodeLabel);
       if (parent == null) {
-        throw 'NodeNotFoundException: Can not found node with label $parentNodeLabel from TreeSearchDelegate, root label was:${root.label}';
+        throw 'NodeNotFoundException: Can not found node with label $parentNodeLabel from TreeSearchDelegate, root label was:${root!.label}';
       }
       parent._nodes.add(newNode);
       return newNode;
     }
     parentNode ??= root;
-    parentNode.add(newNode);
+    parentNode!.add(newNode);
     return newNode;
   }
 
@@ -124,7 +128,7 @@ class TreeSearchDelegate<T> extends Delegate<T, dynamic> {
   void searchItems() {
     shown.clear();
     for (var i in items) {
-      if (root._inShown(i)) {
+      if (root!._inShown(i)) {
         shown.add(i);
       }
     }
@@ -135,7 +139,7 @@ class TreeSearchDelegate<T> extends Delegate<T, dynamic> {
   ///sub nodes for the root node from [subSearches]. if [inserIntoTree] is true, created nodes
   ///will be inserted to [root] node's nodes. this function returns the root node which you can
   ///insert it into another [_TreeSearchNode]s.
-  ///[@Param subSearches] pair of [Search]<T,V> and V values that will be used to create sub nodes for the root.
+  ///[@Param subSearches] list of [TreeNodeData] objects that contains [Search]<T,V> search, V initialValue and [String?] label for each node that will be created and put under the root.
   ///[@Param rootSearch] [Search] function that will be used to create root node.
   ///[@Param rootValue] value that will be used in [rootSearch] function.
   ///[@Param insertIntoTree] if true this node will be inserted under the [root].
@@ -149,6 +153,7 @@ class TreeSearchDelegate<T> extends Delegate<T, dynamic> {
       rootValue,
       filterType,
     );
+
     for (var i in subSearches) {
       final subnode = _TreeSearchNode<T, dynamic>(
           i.search, i.initialValue, filterType,
@@ -156,7 +161,11 @@ class TreeSearchDelegate<T> extends Delegate<T, dynamic> {
       _root.add(subnode);
     }
     if (insertIntoTree) {
-      root.add(_root);
+      if (root == null) {
+        root = _root;
+      } else {
+        root!.add(_root);
+      }
     }
     return _root;
   }
