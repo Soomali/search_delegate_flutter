@@ -1,3 +1,5 @@
+import 'package:search_delegate_flutter/src/treeNodeData.dart';
+
 import '../searchDelegate.dart';
 import 'delegate.dart';
 import 'node.dart';
@@ -15,7 +17,6 @@ class _TreeSearchNode<T, V> extends Node<T, V> {
   }
 
   ///recursively checks all the subnodes of the class until the specific condition met.
-  @override
   bool _inShown(T value,
       {TREE_FILTER_TYPE parentFilterType = TREE_FILTER_TYPE.ALL}) {
     //checks its status regarding the filter type of the parent.
@@ -50,7 +51,7 @@ class _TreeSearchNode<T, V> extends Node<T, V> {
   }
 
   @override
-  Node? findNodeByLabel(String label) {
+  _TreeSearchNode<T, dynamic>? findNodeByLabel(String label) {
     if (this.label != label) {
       for (var i in _nodes) {
         var result = i.findNodeByLabel(label);
@@ -78,14 +79,13 @@ class TreeSearchDelegate<T> extends Delegate<T, dynamic> {
   final Search<T, dynamic> search;
   final dynamic initialValue;
   TREE_FILTER_TYPE rootFilter;
-  late _TreeSearchNode root;
+  late _TreeSearchNode<T, dynamic> root;
   TreeSearchDelegate(
-    List<T> items,
-    List<T> shown, {
+    List<T> items, {
     required this.search,
     required this.initialValue,
     this.rootFilter = TREE_FILTER_TYPE.ALL,
-  }) : super(items, shown, normalSearch: search) {
+  }) : super(items, normalSearch: search) {
     root = _TreeSearchNode<T, dynamic>(
       search,
       initialValue,
@@ -96,9 +96,24 @@ class TreeSearchDelegate<T> extends Delegate<T, dynamic> {
   ///creates a node from [search] and [initialValue ] parameter,
   ///adds it under the root and returns the created node.
   _TreeSearchNode add<P>(Search<T, P> search, P initialValue,
-      {_TreeSearchNode? parentNode,
-      TREE_FILTER_TYPE filterType = TREE_FILTER_TYPE.ALL}) {
-    var newNode = _TreeSearchNode<T, P>(search, initialValue, filterType);
+      {String? nodeLabel,
+      _TreeSearchNode<T, dynamic>? parentNode,
+      TREE_FILTER_TYPE filterType = TREE_FILTER_TYPE.ALL,
+      String? parentNodeLabel}) {
+    assert(parentNode == null || parentNodeLabel == null,
+        'both parentNode and nodeLabel should not be given.');
+
+    var newNode = _TreeSearchNode<T, P>(search, initialValue, filterType,
+        label: nodeLabel);
+    if (parentNodeLabel != null) {
+      _TreeSearchNode<T, dynamic>? parent =
+          root.findNodeByLabel(parentNodeLabel);
+      if (parent == null) {
+        throw 'NodeNotFoundException: Can not found node with label $parentNodeLabel from TreeSearchDelegate, root label was:${root.label}';
+      }
+      parent._nodes.add(newNode);
+      return newNode;
+    }
     parentNode ??= root;
     parentNode.add(newNode);
     return newNode;
@@ -125,10 +140,8 @@ class TreeSearchDelegate<T> extends Delegate<T, dynamic> {
   ///[@Param rootValue] value that will be used in [rootSearch] function.
   ///[@Param insertIntoTree] if true this node will be inserted under the [root].
   ///[@Param filterType] roots [TREE_FILTER_TYPE] type to determine the result of [_inShown] function.
-  _TreeSearchNode createNodeTrees(
-      List<Truple<Search<T, dynamic>, dynamic, String?>> subSearches,
-      Search<T, dynamic> rootSearch,
-      dynamic rootValue,
+  _TreeSearchNode createNodeTrees(List<TreeNodeData<T, dynamic>> subSearches,
+      Search<T, dynamic> rootSearch, dynamic rootValue,
       {bool insertIntoTree = true,
       TREE_FILTER_TYPE filterType = TREE_FILTER_TYPE.ALL}) {
     final _root = _TreeSearchNode<T, dynamic>(
@@ -137,8 +150,9 @@ class TreeSearchDelegate<T> extends Delegate<T, dynamic> {
       filterType,
     );
     for (var i in subSearches) {
-      final subnode = _TreeSearchNode<T, dynamic>(i.first, i.second, filterType,
-          label: i.third);
+      final subnode = _TreeSearchNode<T, dynamic>(
+          i.search, i.initialValue, filterType,
+          label: i.label);
       _root.add(subnode);
     }
     if (insertIntoTree) {

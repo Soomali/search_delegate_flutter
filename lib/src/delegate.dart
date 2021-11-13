@@ -8,7 +8,10 @@ abstract class Delegate<T, V> extends ChangeNotifier {
   List<T> shown;
   final Search<T, V> normalSearch;
 
-  Delegate(this.items, this.shown, {required this.normalSearch});
+  Delegate(
+    this.items, {
+    required this.normalSearch,
+  }) : shown = List.from(items);
 
   void searchItems();
 }

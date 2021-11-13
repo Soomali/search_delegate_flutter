@@ -9,7 +9,7 @@ abstract class Node<T, V> {
 
   ///adds another node into this node.
   void add<P>(Node<T, P> added);
-  Node? findNodeByLabel(String label);
+  Node<T, dynamic>? findNodeByLabel(String label);
 
   /// checks if the value meets the classes specified requirements
   /// for that to be in _shown list.

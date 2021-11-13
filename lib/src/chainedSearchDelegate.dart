@@ -10,9 +10,9 @@ class ChainedSearchDelegate<T> extends Delegate<T, dynamic> {
   final Search<T, dynamic> search;
   dynamic initialValue;
   late _SearchNode<T, dynamic>? _startSearchNode;
-  ChainedSearchDelegate(List<T> items, List<T> shown,
+  ChainedSearchDelegate(List<T> items,
       {required this.search, required this.initialValue})
-      : super(items, shown, normalSearch: search) {
+      : super(items, normalSearch: search) {
     _startSearchNode = _SearchNode<T, dynamic>(search, initialValue);
   }
 
@@ -90,7 +90,6 @@ class _SearchNode<T, V> extends Node<T, V> {
     start._next = next as _SearchNode;
   }
 
-  @override
   bool _inShown(T item) {
     return !search(item, initialSearchValue)
         ? false
@@ -100,7 +99,7 @@ class _SearchNode<T, V> extends Node<T, V> {
   }
 
   @override
-  Node? findNodeByLabel(String label) {
+  _SearchNode<T, dynamic>? findNodeByLabel(String label) {
     if (this.label != label) {
       return _next != null ? _next!.findNodeByLabel(label) : null;
     }

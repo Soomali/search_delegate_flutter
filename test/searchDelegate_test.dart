@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:search_delegate_flutter/searchDelegate.dart';
+import 'package:search_delegate_flutter/src/treeNodeData.dart';
 
 class TestData {
   final String name;
@@ -43,31 +44,39 @@ TestData generateRandomTestData() {
 void main() {
   group('A group of tests', () {
     var items = List<int>.generate(50, (index) => index);
-    var delegate = ChainedSearchDelegate<int>(items, List.from(items),
-        search: (int value, dynamic integer) {
+    var delegate =
+        ChainedSearchDelegate<int>(items, search: (int value, dynamic integer) {
       var val = integer as int;
       return value > val;
     }, initialValue: 5);
     final testData = List.generate(100000, (index) => generateRandomTestData());
-    var chainedTestDelegate = ChainedSearchDelegate<TestData>(
-        testData, List.from(testData), search: (TestData data, dynamic value) {
+    var chainedTestDelegate = ChainedSearchDelegate<TestData>(testData,
+        search: (TestData data, dynamic value) {
       var val = value as int;
       return data.id > val;
     }, initialValue: 100);
 
     final treeSearchDelegate = TreeSearchDelegate<TestData>(
       testData,
-      List.from(testData),
       search: (item, param) => item.id > param,
       initialValue: 150,
     );
     final node = treeSearchDelegate.createNodeTrees(
       [
-        Truple((item, param) => item.id < param, 450, null),
-        Truple((item, param) => item.price > param, 2500, null),
-        Truple((item, param) => item.duration < param, 2, null),
-        Truple((item, param) => item.id > param, 850, null),
-        Truple((item, param) => item.price < param, 250, null),
+        TreeNodeData(
+            initialValue: 450, search: (item, param) => item.id < param),
+        TreeNodeData(
+            initialValue: 2500, search: (item, param) => item.price > param),
+        TreeNodeData(
+          search: (item, param) => item.duration < param,
+          initialValue: 2,
+        ),
+        TreeNodeData(
+          search: (item, param) => item.id > param,
+          initialValue: 850,
+        ),
+        TreeNodeData(
+            search: (item, param) => item.price < param, initialValue: 250),
       ],
       (item, param) => item.isOpen == param,
       true,
