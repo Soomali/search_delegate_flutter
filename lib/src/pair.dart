@@ -4,10 +4,3 @@ class Pair<T, V> {
   final V second;
   Pair(this.first, this.second);
 }
-
-class Truple<T, V, P> {
-  final T first;
-  final V second;
-  final P third;
-  Truple(this.first, this.second, this.third);
-}
