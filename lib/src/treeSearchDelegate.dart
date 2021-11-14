@@ -190,7 +190,7 @@ class TreeSearchDelegate<T> extends Delegate<T, dynamic> {
   ///[@Param rootValue] value that will be used in [rootSearch] function.
   ///[@Param insertIntoTree] if true this node will be inserted under the [root].
   ///[@Param filterType] roots [TREE_FILTER_TYPE] type to determine the result of [_inShown] function.
-  _TreeSearchNode createNodeTrees(List<TreeNodeData<T, dynamic>> subSearches,
+  _TreeSearchNode createNodeTree(List<TreeNodeData<T, dynamic>> subSearches,
       Search<T, dynamic> rootSearch, dynamic rootValue,
       {bool insertIntoTree = true,
       TREE_FILTER_TYPE filterType = TREE_FILTER_TYPE.ALL}) {
