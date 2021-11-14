@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:search_delegate_flutter/searchDelegate.dart';
+import 'package:search_delegate_flutter/search_delegate_flutter.dart';
 import 'package:search_delegate_flutter/src/treeNodeData.dart';
 
 class TestData {
@@ -68,7 +68,7 @@ void main() {
       final treeSearchDelegate = TreeSearchDelegate<TestData>(
         testData,
       );
-      final node = treeSearchDelegate.createNodeTrees(
+      final node = treeSearchDelegate.createNodeTree(
         [
           TreeNodeData(
               initialValue: 450, search: (item, param) => item.id < param),

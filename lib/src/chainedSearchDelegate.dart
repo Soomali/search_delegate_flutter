@@ -1,4 +1,4 @@
-import '../searchDelegate.dart';
+import '../search_delegate_flutter.dart';
 import 'delegate.dart';
 import 'node.dart';
 

@@ -1,6 +1,6 @@
 import 'package:search_delegate_flutter/src/treeNodeData.dart';
 
-import '../searchDelegate.dart';
+import '../search_delegate_flutter.dart';
 import 'delegate.dart';
 import 'node.dart';
 
