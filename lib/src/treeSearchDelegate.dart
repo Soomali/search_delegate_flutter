@@ -16,6 +16,8 @@ class _TreeSearchNode<T, V> extends Node<T, V> {
     _nodes.add(added as _TreeSearchNode<T, P>);
   }
 
+  void clear() => _nodes.clear();
+
   ///recursively checks all the subnodes of the class until the specific condition met.
   bool _inShown(T value,
       {TREE_FILTER_TYPE parentFilterType = TREE_FILTER_TYPE.ALL}) {
@@ -68,6 +70,23 @@ class _TreeSearchNode<T, V> extends Node<T, V> {
     }
     return this;
   }
+
+  void removeByLabel(String label) {
+    _nodes.removeWhere((element) => element.label == label);
+  }
+
+  bool remove(_TreeSearchNode<T, dynamic> child) {
+    return _nodes.remove(child);
+  }
+
+  _TreeSearchNode<T, dynamic>? _findParentNodeOf(String label) {
+    if (_nodes.where((element) => element.label == label).length > 0) {
+      return this;
+    }
+    for (var i in _nodes) {
+      return i._findParentNodeOf(label);
+    }
+  }
 }
 
 /// it is for determining [_TreeSearchNode] to how to handle [_TreeSearchNode.inShwon]
@@ -92,6 +111,28 @@ class TreeSearchDelegate<T> extends Delegate<T, dynamic> {
 
   _TreeSearchNode<T, dynamic>? findNodeByLabel(String label) =>
       this.root?.findNodeByLabel(label);
+
+  _TreeSearchNode<T, dynamic>? findParentByLabel(String label) =>
+      root!._findParentNodeOf(label);
+
+  void clear() {
+    root?.clear();
+    root = null;
+  }
+
+  void clearNodeByLabel(String label) {
+    try {
+      var node = findNodeByLabel(label)!;
+      print(node);
+      node.clear();
+
+      var parent = findParentByLabel(label);
+      print(parent);
+      parent?.remove(node);
+    } catch (e) {
+      throw 'NodeNotFoundException: no node found with label $label';
+    }
+  }
 
   ///creates a node from [search] and [initialValue ] parameter,
   ///adds it under the root and returns the created node.
@@ -126,6 +167,11 @@ class TreeSearchDelegate<T> extends Delegate<T, dynamic> {
   ///searches nodes regarding their [TREE_FILTER_TYPE]
   @override
   void searchItems() {
+    if (root == null) {
+      shown = List.from(items);
+      notifyListeners();
+      return;
+    }
     shown.clear();
     for (var i in items) {
       if (root!._inShown(i)) {

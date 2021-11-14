@@ -42,39 +42,55 @@ TestData generateRandomTestData() {
 }
 
 void main() {
-  group('A group of tests', () {
-    var items = List<int>.generate(50, (index) => index);
-    var delegate = ChainedSearchDelegate<int>(items);
+  group('', () {
     final testData = List.generate(100000, (index) => generateRandomTestData());
     var chainedTestDelegate = ChainedSearchDelegate<TestData>(testData);
+    TreeSearchDelegate<TestData> delegateWithLabeled =
+        TreeSearchDelegate(testData);
 
-    final treeSearchDelegate = TreeSearchDelegate<TestData>(
-      testData,
-    );
-    final node = treeSearchDelegate.createNodeTrees(
-      [
-        TreeNodeData(
-            initialValue: 450, search: (item, param) => item.id < param),
-        TreeNodeData(
-            initialValue: 2500, search: (item, param) => item.price > param),
-        TreeNodeData(
-          search: (item, param) => item.duration < param,
-          initialValue: 2,
-        ),
-        TreeNodeData(
-          search: (item, param) => item.id > param,
-          initialValue: 850,
-        ),
-        TreeNodeData(
-            search: (item, param) => item.price < param, initialValue: 250),
-      ],
-      (item, param) => item.isOpen == param,
-      true,
-      insertIntoTree: true,
-      filterType: TREE_FILTER_TYPE.ONLY,
-    );
+    void addLabels() {
+      delegateWithLabeled.add<bool>((item, param) => item.isOpen, true,
+          nodeLabel: 'root');
+      delegateWithLabeled.add<int>((item, param) => item.price < param, 1500,
+          nodeLabel: 'lesserThan1500', filterType: TREE_FILTER_TYPE.ONLY);
+      delegateWithLabeled.add<int>((item, param) => item.price > param, 150,
+          nodeLabel: 'PriceBigger150');
+      delegateWithLabeled.add<int>((item, param) => item.duration < param, 2,
+          parentNodeLabel: 'lesserThan1500', nodeLabel: 'durationLesserThan2');
+    }
 
-    setUp(() {
+    void clearRoot() {
+      delegateWithLabeled.clear();
+    }
+
+    clearRoot();
+    test("Time test", () {
+      final treeSearchDelegate = TreeSearchDelegate<TestData>(
+        testData,
+      );
+      final node = treeSearchDelegate.createNodeTrees(
+        [
+          TreeNodeData(
+              initialValue: 450, search: (item, param) => item.id < param),
+          TreeNodeData(
+              initialValue: 2500, search: (item, param) => item.price > param),
+          TreeNodeData(
+            search: (item, param) => item.duration < param,
+            initialValue: 2,
+          ),
+          TreeNodeData(
+            search: (item, param) => item.id > param,
+            initialValue: 850,
+          ),
+          TreeNodeData(
+              search: (item, param) => item.price < param, initialValue: 250),
+        ],
+        (item, param) => item.isOpen == param,
+        true,
+        insertIntoTree: true,
+        filterType: TREE_FILTER_TYPE.ONLY,
+      );
+
       var regex = RegExp(".*a.*");
       chainedTestDelegate.chain<RegExp>(
           (item, param) => param.hasMatch(item.name), regex);
@@ -91,17 +107,21 @@ void main() {
       var ts = DateTime.now().millisecondsSinceEpoch;
       treeSearchDelegate.searchItems();
       var tf = DateTime.now().millisecondsSinceEpoch;
-      print("filtering with Tree delegate took ${tf - ts} milliseconds for" +
+      final treeTime = tf - ts;
+      final chainedTime = f - s;
+      print("filtering with Tree delegate took $treeTime milliseconds for" +
           " ${testData.length} items, qualfying ${treeSearchDelegate.shown.length} items to show.");
       print(
-          "filtering with Chained delegate took ${f - s} milliseconds for ${testData.length} items, qualfying ${chainedTestDelegate.shown.length} items to show.");
+          "filtering with Chained delegate took $chainedTime milliseconds for ${testData.length} items, qualfying ${chainedTestDelegate.shown.length} items to show.");
+      expect(true, treeTime < 100);
+      expect(true, chainedTime < 100);
       for (var i in chainedTestDelegate.shown) {
         if (i.id <= 250 ||
             !i.isOpen ||
             !i.name.contains('a') ||
             i.price >= 2000 ||
             i.duration <= 1) {
-          print(i);
+          throw 'error filtering $i fot chainedTestDelegate';
         }
       }
       for (var i in treeSearchDelegate.shown) {
@@ -110,36 +130,53 @@ void main() {
             (i.id <= 450 &&
                 (i.price <= 2500 && i.price >= 250) &&
                 i.duration >= 2))) {
-          print('error filtering $i');
+          throw 'error filtering $i for treeSerachDelegate';
         }
       }
     });
 
-    test('First Test', () {
-      final items = List.generate(25000, (index) => generateRandomTestData());
-      TreeSearchDelegate<TestData> delegate = TreeSearchDelegate(items);
-      delegate.add<bool>((item, param) => item.isOpen, true, nodeLabel: 'root');
-      delegate.add<int>((item, param) => item.price < param, 1500,
-          nodeLabel: 'lesserThan1500', filterType: TREE_FILTER_TYPE.ONLY);
-      delegate.add<int>((item, param) => item.price > param, 150,
-          nodeLabel: 'PriceBigger150');
-      delegate.add<int>((item, param) => item.duration < param, 2,
-          parentNodeLabel: 'lesserThan1500', nodeLabel: 'durationLesserThan2');
-      var dbt = delegate.add<int>((item, param) => item.price % 10 == 0, 1500,
+    test('Label addditionTest,', () {
+      addLabels();
+      var dbt = delegateWithLabeled.add<int>(
+          (item, param) => item.price % 10 == 0, 1500,
           nodeLabel: 'dividableByTen', parentNodeLabel: 'lesserThan1500');
-      delegate.searchItems();
-      expect(delegate.shown.where((element) => element.price > 1500).length, 0);
-      expect(delegate.shown.where((element) => element.price < 150).length, 0);
+      delegateWithLabeled.searchItems();
+      expect(delegateWithLabeled.findNodeByLabel('dividableByTen'), dbt);
+
       expect(
-          delegate.shown
+          delegateWithLabeled.shown
+              .where((element) => element.price > 1500)
+              .length,
+          0);
+      expect(
+          delegateWithLabeled.shown
+              .where((element) => element.price < 150)
+              .length,
+          0);
+      expect(
+          delegateWithLabeled.shown
               .where((element) =>
                   element.price > 1500 &&
                   element.price < 150 &&
                   (element.duration > 2 && element.price % 10 != 0))
               .length,
           0);
-      expect(delegate.findNodeByLabel('dividableByTen'), dbt);
-      print(delegate.findNodeByLabel('lesserThan1500'));
+
+      print(delegateWithLabeled.findNodeByLabel('lesserThan1500'));
+      clearRoot();
+    });
+    test('Label removing test', () {
+      addLabels();
+      delegateWithLabeled.add<int>((item, param) => item.price % 10 == 0, 1500,
+          nodeLabel: 'dividableByTen', parentNodeLabel: 'lesserThan1500');
+      delegateWithLabeled.clearNodeByLabel('dividableByTen');
+      delegateWithLabeled.clearNodeByLabel('lesserThan1500');
+
+      var res = delegateWithLabeled.findNodeByLabel('dividableByTen');
+      var lesserRes = delegateWithLabeled.findNodeByLabel('lesserThan1500');
+      expect(null, res);
+      expect(null, lesserRes);
+      clearRoot();
     });
   });
 }
